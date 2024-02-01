@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Switch, Route } from "react-router-dom";
 import Article from "./Article";
 import Header from "./Header";
@@ -9,19 +9,57 @@ function App() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    fetch("/check_session").then((response) => {
-      if (response.ok) {
-        response.json().then((user) => setUser(user));
-      }
-    });
+    // Check session on component mount
+    fetch("/check_session")
+      .then((response) => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          throw new Error("User not authenticated");
+        }
+      })
+      .then((user) => setUser(user))
+      .catch((error) => {
+        // Handle unauthorized or session check failure
+        console.error("Session check failed:", error);
+        setUser(null);
+      });
   }, []);
 
-  function handleLogin(user) {
-    setUser(user);
+  function handleLogin(username) {
+    // Perform login request
+    fetch("/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ username }),
+    })
+      .then((response) => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          throw new Error("Login failed");
+        }
+      })
+      .then((user) => setUser(user))
+      .catch((error) => {
+        // Handle login failure
+        console.error("Login failed:", error);
+        setUser(null);
+      });
   }
 
   function handleLogout() {
-    setUser(null);
+    // Perform logout request
+    fetch("/logout", {
+      method: "DELETE",
+    })
+      .then(() => setUser(null))
+      .catch((error) => {
+        // Handle logout failure
+        console.error("Logout failed:", error);
+      });
   }
 
   return (
